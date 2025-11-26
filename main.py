@@ -1,4 +1,4 @@
-import sys
+import argparse
 from pathlib import Path
 
 import cv2
@@ -94,36 +94,61 @@ def process_camera(model, cam_id):
 
 def main():
     global is_serial
+
+    # ---------------------------
+    # ARGUMENT PARSER
+    # ---------------------------
+    parser = argparse.ArgumentParser(
+        description="Run YOLO on folder, webcam, or video"
+    )
+
+    parser.add_argument(
+        "--folder",
+        type=str,
+        help="Path to folder of images"
+    )
+
+    parser.add_argument(
+        "--webcam",
+        type=str,
+        help="Webcam ID (e.g., 0)"
+    )
+
+    parser.add_argument(
+        "--video",
+        type=str,
+        help="Path to video file"
+    )
+
+    parser.add_argument(
+        "--serial",
+        action="store_true",
+        help="Enable serial mode"
+    )
+
+    args = parser.parse_args()
+
+    # ---------------------------
+    # LOAD MODEL
+    # ---------------------------
     model = YOLO(MODEL_PATH)
 
-    if len(sys.argv) < 2:
-        print("Usage:")
-        print(" python test_images_batch.py folder=<path>")
-        print(" python test_images_batch.py webcam=0")
-        print(" python test_images_batch.py video=<path>")
-        sys.exit(1)
+    # STORE FLAG
+    is_serial = args.serial
 
-    arg = sys.argv[1]
-
-    if arg.startswith("serial="):
-        if (arg.split("=", 1)[1] == "1"
-                or arg.split("=", 1)[1] == "true"):
-            is_serial = True
-
-    # FOLDER MODE
-    if arg.startswith("folder="):
-        folder_path = arg.split("=", 1)[1]
-        process_image_folder(model, folder_path)
+    # ---------------------------
+    # ARGUMENT HANDLING
+    # ---------------------------
+    if args.folder:
+        process_image_folder(model, args.folder)
         return
 
-    # WEBCAM MODE
-    if arg.startswith("webcam="):
-        cam_id = arg.split("=", 1)[1]
-        process_camera(model, cam_id)
+    if args.webcam:
+        process_camera(model, args.webcam)
         return
 
-    print("❌ Invalid argument. Use:")
-    print(" folder=<path> | webcam=0 | video=<path>")
+    # If no valid mode:
+    parser.print_help()
 
 
 if __name__ == "__main__":
