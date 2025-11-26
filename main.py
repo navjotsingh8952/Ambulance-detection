@@ -58,7 +58,7 @@ def process_inputs(r):
         if ele["confidence"] < 0.7:
             continue
         print(ele)
-        if ele == "emergency":
+        if ele["class_name"] == "emergency":
             if is_serial:
                 send_ambulance_signal()
                 break
