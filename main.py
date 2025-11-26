@@ -93,6 +93,7 @@ def process_camera(model, cam_id):
 
 
 def main():
+    global is_serial
     model = YOLO(MODEL_PATH)
 
     if len(sys.argv) < 2:
