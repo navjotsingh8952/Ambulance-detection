@@ -24,7 +24,7 @@ def process_image_folder(model, input_dir):
 
     print(f"Running inference on {len(images)} images...")
     for p in images:
-        results = model.predict(source=str(p), conf=CONF)
+        results = model.predict(source=str(p), conf=CONF, hide_conf=True)
         r = results[0]
         labels = [r.names[int(c)] for c in r.boxes.cls] if len(r.boxes) else []
         print(f"{p.name} -> {len(labels)} objects, classes: {labels}")
@@ -78,7 +78,7 @@ def process_camera(model, cam_id):
             print("❌ Failed to grab frame")
             break
 
-        results = model.predict(frame, conf=CONF)
+        results = model.predict(frame, conf=CONF, hide_conf=True)
         r = results[0]
         annotated = r.plot()
         cv2.imshow("Webcam Detection", annotated)
