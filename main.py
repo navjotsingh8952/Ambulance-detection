@@ -116,7 +116,7 @@ def main():
 
     # WEBCAM MODE
     if arg.startswith("webcam="):
-        cam_id = int(arg.split("=", 1)[1])
+        cam_id = arg.split("=", 1)[1]
         process_camera(model, cam_id)
         return
 
