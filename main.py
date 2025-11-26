@@ -12,7 +12,7 @@ CONF = 0.45
 
 # ---------- END CONFIG ----------
 
-def process_image_folder(model, input_dir):
+def process_image_folder(model, input_dir, serial_port):
     inp = Path(input_dir)
     out = Path(OUT_DIR)
     out.mkdir(parents=True, exist_ok=True)
@@ -28,23 +28,23 @@ def process_image_folder(model, input_dir):
         r = results[0]
         labels = [r.names[int(c)] for c in r.boxes.cls] if len(r.boxes) else []
         print(f"{p.name} -> {len(labels)} objects, classes: {labels}")
-        process_inputs(r)
+        process_inputs(r, serial_port)
 
     print("Saved annotated images to:", out.resolve())
 
 
-def send_ambulance_signal():
+def send_ambulance_signal(serial_port):
     import serial
     import time
 
-    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
+    ser = serial.Serial(serial_port, 9600, timeout=1)
     time.sleep(2)  # wait for Arduino reset
     ser.write(b"1\n")
     print(f"sent 1 serially")
     time.sleep(2)
 
 
-def process_inputs(r):
+def process_inputs(r, serial_port):
     result = []
     for box in r.boxes:
         cls_id = int(box.cls)
@@ -59,12 +59,12 @@ def process_inputs(r):
             continue
         print(ele)
         if ele["class_name"] == "emergency":
-            if is_serial:
-                send_ambulance_signal()
+            if serial_port:
+                send_ambulance_signal(serial_port)
                 break
 
 
-def process_camera(model, cam_id):
+def process_camera(model, cam_id, serial_port):
     print(f"Opening webcam {cam_id}...")
     cap = cv2.VideoCapture(cam_id)
 
@@ -82,7 +82,7 @@ def process_camera(model, cam_id):
         r = results[0]
         annotated = r.plot()
         cv2.imshow("Webcam Detection", annotated)
-        process_inputs(r)
+        process_inputs(r, serial_port)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Exiting...")
@@ -111,7 +111,7 @@ def main():
     parser.add_argument(
         "--webcam",
         type=str,
-        help="Webcam ID (e.g., 0)"
+        help="Webcam ID (e.g., /dev/video0)"
     )
 
     parser.add_argument(
@@ -122,9 +122,8 @@ def main():
 
     parser.add_argument(
         "--serial",
-        action="store_true",
-        help="Enable serial mode"
-    )
+        type=str,
+        help="Serial port path (e.g., /dev/ttyUSB0)")
 
     args = parser.parse_args()
 
@@ -134,17 +133,17 @@ def main():
     model = YOLO(MODEL_PATH)
 
     # STORE FLAG
-    is_serial = args.serial
+    serial_port = args.serial  # None if not provided
 
     # ---------------------------
     # ARGUMENT HANDLING
     # ---------------------------
     if args.folder:
-        process_image_folder(model, args.folder)
+        process_image_folder(model, args.folder, serial_port)
         return
 
     if args.webcam:
-        process_camera(model, args.webcam)
+        process_camera(model, args.webcam, serial_port)
         return
 
     # If no valid mode:
